@@ -14,3 +14,5 @@ bash start.sh
         key: region
 
 ```
+
+3. If you dont need to middleware, you can ingore `~/traefik-middleware/` 

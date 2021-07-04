@@ -1,0 +1,118 @@
+#
+# Traefik Forward Auth Deployment
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik-forward-auth
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: traefik-forward-auth
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: thomseddon/traefik-forward-auth:2
+        name: traefik-forward-auth
+        ports:
+        - containerPort: 4181
+          protocol: TCP
+        env:
+        # - name: DOMAIN
+        #   value: "k3s.rpy3.com"
+        - name: WHITELIST
+          value: "bkrm.dahal@gmail.com"
+        - name: COOKIE_DOMAIN
+          value: "rpy3.com"
+        - name: AUTH_HOST
+          value: "auth.rpy3.com"
+        - name: PROVIDERS_GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: traefik-forward-auth-secrets
+              key: traefik-forward-auth-google-client-id
+        - name: PROVIDERS_GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: traefik-forward-auth-secrets
+              key: traefik-forward-auth-google-client-secret
+        - name: SECRET
+          valueFrom:
+            secretKeyRef:
+              name: traefik-forward-auth-secrets
+              key: traefik-forward-auth-secret
+
+---
+#
+# Auth Service
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+spec:
+  type: ClusterIP
+  selector:
+    app: traefik-forward-auth
+  ports:
+  - name: auth-http
+    port: 4181
+    targetPort: 4181
+
+---
+#
+# Secrets
+#
+# Kubernetes requires secret values to be converted to base64 when defined
+# explicitly like this. (use `echo -n 'secret-value' | base64`)
+#
+# These are here for completeness, in reality you may define these elsewhere,
+# for example using kustomize (shown in advanced examples)
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: traefik-forward-auth-secrets
+  labels:
+    app: traefik-forward-auth
+type: Opaque
+data:
+  traefik-forward-auth-google-client-id: c29
+  traefik-forward-auth-google-client-secret: c29
+  traefik-forward-auth-secret: c29
+
+---
+#
+# NOTE: This is only needed if you are using auth-host mode
+#
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-forward-auth
+  labels:
+    app: traefik-forward-auth
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/auth-type: forward
+    ingress.kubernetes.io/auth-url: http://traefik-forward-auth:4181
+    ingress.kubernetes.io/auth-response-headers: X-Forwarded-User
+spec:
+  rules:
+  - host: "auth.rpy3.com"
+    http:
+      paths:
+      - backend:
+          serviceName: traefik-forward-auth
+          servicePort: auth-http
+
