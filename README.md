@@ -24,3 +24,5 @@ bash start.sh
 ```
 
 3. If you dont need to middleware, you can ingore `~/traefik-middleware/` 
+
+4. Dry run and get yaml only  `helm template --debug -f values.yaml ./helm_charts`.

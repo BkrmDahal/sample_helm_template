@@ -28,13 +28,15 @@ spec:
           protocol: TCP
         env:
         # - name: DOMAIN
-        #   value: "k3s.rpy3.com"
+        #   value: "rpy3.com"
         - name: WHITELIST
           value: "bkrm.dahal@gmail.com"
         - name: COOKIE_DOMAIN
           value: "rpy3.com"
         - name: AUTH_HOST
           value: "auth.rpy3.com"
+        - name: MATCH_WHITELIST_OR_DOMAIN
+          value: "true"
         - name: PROVIDERS_GOOGLE_CLIENT_ID
           valueFrom:
             secretKeyRef:

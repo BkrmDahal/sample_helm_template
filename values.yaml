@@ -32,3 +32,7 @@ env: testing
 
 port: 80
 
+traefikMiddleware: false
+
+
+
